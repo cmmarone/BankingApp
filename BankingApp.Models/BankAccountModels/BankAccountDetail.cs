@@ -15,7 +15,7 @@ namespace BankingApp.Models.BankAccountModels
         [Display(Name = "Account Number")]
         public string AccountNumber { get; set; }
         [Display(Name = "Account Type")]
-        public AccountType AccountType { get; set; }
+        public string AccountType { get; set; }
         public decimal Balance { get; set; }
     }
 }

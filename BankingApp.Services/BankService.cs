@@ -37,7 +37,7 @@ namespace BankingApp.Services
                     var listItem = new BankAccountListItem
                     {
                         AccountNumber = account.Id.ToString("D9"),
-                        AccountType = account.AccountType
+                        AccountType = account.AccountType.ToString()
                     };
                     listItems.Add(listItem);
                 }

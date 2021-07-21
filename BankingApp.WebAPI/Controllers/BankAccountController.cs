@@ -66,7 +66,7 @@ namespace BankingApp.WebAPI.Controllers
             return Ok("The account has been successfully deleted.");
         }
 
-        public BankAccountService CreateBankAccountService()
+        private BankAccountService CreateBankAccountService()
         {
             var ownerId = Guid.Parse(User.Identity.GetUserId());
             return new BankAccountService(ownerId);

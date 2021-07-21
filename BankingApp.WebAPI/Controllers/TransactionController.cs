@@ -13,6 +13,7 @@ namespace BankingApp.WebAPI.Controllers
     [Authorize]
     public class TransactionController : ApiController
     {
+        [HttpPost]
         public IHttpActionResult Post(Deposit model)
         {
             var service = CreateBankAccountService();
@@ -20,7 +21,7 @@ namespace BankingApp.WebAPI.Controllers
                 return BadRequest(ModelState);
             if (!service.MakeDeposit(model))
                 return InternalServerError();
-            return Ok($"{model.Amount} successfully deposited.");
+            return Ok($"${model.Amount} successfully deposited.");
         }
 
         public IHttpActionResult Put(Transfer model)
@@ -31,7 +32,7 @@ namespace BankingApp.WebAPI.Controllers
             switch (service.MakeTransfer(model))
             {
                 case 1:
-                    return Ok($"{model.Amount} successfully transferred.");
+                    return Ok($"${model.Amount} successfully transferred.");
                 case 2:
                     return InternalServerError();
                 case 3:
@@ -49,7 +50,7 @@ namespace BankingApp.WebAPI.Controllers
             switch (service.MakeWithdrawal(model))
             {
                 case 1:
-                    return Ok($"{model.Amount} successfully withdrawn.");
+                    return Ok($"${model.Amount} successfully withdrawn.");
                 case 2:
                     return InternalServerError();
                 case 3:
@@ -61,7 +62,7 @@ namespace BankingApp.WebAPI.Controllers
             }
         }
 
-        public BankAccountService CreateBankAccountService()
+        private BankAccountService CreateBankAccountService()
         {
             var ownerId = Guid.Parse(User.Identity.GetUserId());
             return new BankAccountService(ownerId);

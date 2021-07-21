@@ -19,13 +19,18 @@ namespace BankingApp.Services
         {
             using (var context = new ApplicationDbContext())
             {
-                var accountList = context.BankAccounts.Where(a => a.OwnerId == _ownerId)
-                    .Select(a => new BankAccountListItem
+                var accountList = context.BankAccounts.Where(a => a.OwnerId == _ownerId).ToList();
+                var listItemList = new List<BankAccountListItem>();
+                foreach (var account in accountList)
+                {
+                    var listItem = new BankAccountListItem
                     {
-                        AccountNumber = a.Id.ToString("D9"),
-                        AccountType = a.AccountType
-                    }).ToList().OrderByDescending(a => a.AccountNumber);
-                return accountList;
+                        AccountNumber = account.Id.ToString("D9"),
+                        AccountType = account.AccountType.ToString()
+                    };
+                    listItemList.Add(listItem);
+                }
+                return listItemList.OrderBy(a => a.AccountNumber);
             }
         }
 
@@ -38,7 +43,7 @@ namespace BankingApp.Services
                 {
                     BankName = entity.Bank.Name,
                     AccountNumber = entity.Id.ToString("D9"),
-                    AccountType = entity.AccountType,
+                    AccountType = entity.AccountType.ToString(),
                     Balance = entity.Balance
                 };
             }
@@ -54,7 +59,7 @@ namespace BankingApp.Services
                     BankName = entity.Bank.Name,
                     FullName = $"{entity.LastName}, {entity.FirstName}",
                     AccountNumber = entity.Id.ToString("D9"),
-                    AccountType = entity.AccountType,
+                    AccountType = entity.AccountType.ToString(),
                     Balance = entity.Balance
                 };
             }
@@ -84,11 +89,16 @@ namespace BankingApp.Services
             {
                 var entity = context.BankAccounts.FirstOrDefault(a => a.Id == model.BankAccountId);
 
-                entity.BankId = (context.Banks.FirstOrDefault(b => b.Name.ToLower() == model.BankName.ToLower())).Id;
-                entity.AccountType = model.AccountType;
-                entity.Balance = model.Balance;
-                entity.LastName = model.LastName;
-                entity.FirstName = model.FirstName;
+                if (model.BankName != null)
+                    entity.BankId = (context.Banks.FirstOrDefault(b => b.Name.ToLower() == model.BankName.ToLower())).Id;
+                if (model.AccountType != null)
+                    entity.AccountType = model.AccountType ?? AccountType.Checking;
+                if (model.Balance != null)
+                    entity.Balance = model.Balance ?? 0;
+                if (model.LastName != null)
+                    entity.LastName = model.LastName;
+                if (model.FirstName != null)
+                    entity.FirstName = model.FirstName;
                 return context.SaveChanges() == 1;
             }
         }
