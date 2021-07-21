@@ -28,9 +28,17 @@ namespace BankingApp.WebAPI.Controllers
             var service = CreateBankAccountService();
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            if (!service.MakeTransfer(model))
-                return InternalServerError();
-            return Ok($"{model.Amount} successfully transferred.");
+            switch (service.MakeTransfer(model))
+            {
+                case 1:
+                    return Ok($"{model.Amount} successfully transferred.");
+                case 2:
+                    return InternalServerError();
+                case 3:
+                    return BadRequest("Transfer failed due to insufficient funds.");
+                default:
+                    return InternalServerError();
+            }
         }
 
         public IHttpActionResult Delete(Withdrawal model)
@@ -38,9 +46,19 @@ namespace BankingApp.WebAPI.Controllers
             var service = CreateBankAccountService();
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            if (!service.MakeWithdrawal(model))
-                return InternalServerError();
-            return Ok($"{model.Amount} successfully withdrawn.");
+            switch (service.MakeWithdrawal(model))
+            {
+                case 1:
+                    return Ok($"{model.Amount} successfully withdrawn.");
+                case 2:
+                    return InternalServerError();
+                case 3:
+                    return BadRequest("Cannot withdraw more than $1,000 from an Individual Investment Account.");
+                case 4:
+                    return BadRequest("Withdrawal failed due to insufficient funds.");
+                default:
+                    return InternalServerError();
+            }
         }
 
         public BankAccountService CreateBankAccountService()

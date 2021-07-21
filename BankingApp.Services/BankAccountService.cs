@@ -114,26 +114,34 @@ namespace BankingApp.Services
             }
         }
 
-        public bool MakeWithdrawal(Withdrawal model)
+        public int MakeWithdrawal(Withdrawal model)
         {
             using (var context = new ApplicationDbContext())
             {
                 var account = context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
+                if (account.AccountType == AccountType.IndividualInvestment)
+                    if (model.Amount > 1000) return 3;
+                if (account.Balance < model.Amount) return 4;
 
                 account.Balance -= model.Amount;
-                return context.SaveChanges() == 1;
+                if (context.SaveChanges() == 1) return 1;
+                else return 2;
             }
         }
 
-        public bool MakeTransfer(Transfer model)
+        public int MakeTransfer(Transfer model)
         {
             using (var context = new ApplicationDbContext())
             {
                 var sendingAccount = context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
                 var receivingAccount = context.BankAccounts.FirstOrDefault(a => a.Id == model.TargetAccount);
+
+                if (sendingAccount.Balance < model.Amount) return 3;
+
                 sendingAccount.Balance -= model.Amount;
                 receivingAccount.Balance += model.Amount;
-                return context.SaveChanges() == 2;
+                if (context.SaveChanges() == 2) return 1;
+                else return 2;
             }
         }
     }
