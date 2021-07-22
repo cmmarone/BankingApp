@@ -62,11 +62,27 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BankAccountServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BankServiceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BankingApp.Data\BankingApp.Data.csproj">
+      <Project>{3f3acca1-51a1-4174-909e-2cdd18164bf4}</Project>
+      <Name>BankingApp.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BankingApp.Models\BankingApp.Models.csproj">
+      <Project>{35c7826d-3ece-49ee-a571-cba046dc5be8}</Project>
+      <Name>BankingApp.Models</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BankingApp.Services\BankingApp.Services.csproj">
+      <Project>{71f3492e-bd09-4d7a-8c6f-b26c0c46f15c}</Project>
+      <Name>BankingApp.Services</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
