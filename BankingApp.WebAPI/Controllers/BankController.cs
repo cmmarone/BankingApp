@@ -1,4 +1,5 @@
-﻿using BankingApp.Models.BankModels;
+﻿using BankingApp.Data;
+using BankingApp.Models.BankModels;
 using BankingApp.Services;
 using Microsoft.AspNet.Identity;
 using System;
@@ -13,7 +14,7 @@ namespace BankingApp.WebAPI.Controllers
     [Authorize(Roles = "Admin")]
     public class BankController : ApiController
     {
-        private readonly BankService _service = new BankService();
+        private readonly BankService _service = new BankService(new ApplicationDbContext());
 
         [AllowAnonymous]
         public IHttpActionResult Get()

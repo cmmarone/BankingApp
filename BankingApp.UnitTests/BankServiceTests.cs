@@ -1,8 +1,12 @@
 ﻿using BankingApp.Data;
+using BankingApp.Data.Entities;
 using BankingApp.Models.BankModels;
 using BankingApp.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using System;
+using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 
 namespace BankingApp.UnitTests
@@ -10,81 +14,75 @@ namespace BankingApp.UnitTests
     [TestClass]
     public class BankServiceTests
     {
+        private Mock<DbSet<Bank>> _mockBanks;
+        private Mock<ApplicationDbContext> _mockContext;
         private BankService _bankService;
+
         private BankCreate _bankCreate1;
-        private BankCreate _bankCreate2;
         private BankEdit _bankEdit;
 
         [TestInitialize]
         public void Arrange()
         {
-            _bankService = new BankService();
-            _bankCreate1 = new BankCreate { Name = "Test Bank 1" };
-            _bankCreate2 = new BankCreate { Name = "Test Bank 2" };
-        }
-
-        [TestMethod]
-        public void B_CreateBank_ShouldCreateEntity()
-        {
-            _bankService.CreateBank(_bankCreate1);
-            _bankService.CreateBank(_bankCreate2);
-
-            using (var context = new ApplicationDbContext())
+            var testEntities = new List<Bank>
             {
-                bool query = context.Banks.Any(b => b.Name == _bankCreate1.Name);
-                Assert.IsTrue(query);
-            }
+                new Bank { Id = 1, Name = "Bank One" },
+                new Bank { Id = 2, Name = "Bank Two" },
+                new Bank { Id = 3, Name = "Bank Three" }
+            }.AsQueryable();
+            _bankCreate1 = new BankCreate { Name = "New Bank" };
+            _bankEdit = new BankEdit { BankId = 1, Name = "Changed Name" };
+
+            _mockBanks = new Mock<DbSet<Bank>>();
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.Provider).Returns(testEntities.Provider);
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.Expression).Returns(testEntities.Expression);
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.ElementType).Returns(testEntities.ElementType);
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.GetEnumerator()).Returns(testEntities.GetEnumerator());
+            _mockContext = new Mock<ApplicationDbContext>();
+            _mockContext.Setup(m => m.Banks).Returns(_mockBanks.Object);
+            _bankService = new BankService(_mockContext.Object);
         }
 
         [TestMethod]
-        public void C_GetBanks_ShouldReturnAllEntities()
+        public void GetBanks_ShouldReturnAllEntities()
         {
             var bankResults = _bankService.GetBanks();
 
-            bool query1 = bankResults.Any(b => b.Name == _bankCreate1.Name);
-            bool query2 = bankResults.Any(b => b.Name == _bankCreate2.Name);
-            Assert.IsTrue(query1 && query2);
+            Assert.IsTrue(bankResults.Count() == 3);
         }
 
         [TestMethod]
-        public void D_GetBankById_ShouldReturnCorrectEntity()
+        public void GetBankById_ShouldReturnCorrectEntity()
         {
-            using (var context = new ApplicationDbContext())
-            {
-                int id = (context.Banks.FirstOrDefault(b => b.Name == _bankCreate1.Name)).Id;
-                var bank = _bankService.GetBankById(id);
-                Assert.AreEqual(_bankCreate1.Name, bank.Name);
-            }
+            var bankResult = _bankService.GetBankById(1);
+
+            Assert.AreEqual("Bank One", bankResult.Name);
         }
 
         [TestMethod]
-        public void E_UpdateBank_ShouldUpdateValue()
+        public void CreateBank_ShouldAddEntity()
         {
-            using (var context = new ApplicationDbContext())
-            {
-                int id = (context.Banks.FirstOrDefault(b => b.Name == _bankCreate1.Name)).Id;
-                _bankEdit = new BankEdit { BankId = id, Name = "Updated Bank 1" };
-                _bankService.UpdateBank(_bankEdit);
+            _bankService.CreateBank(_bankCreate1);
 
-                var bank = _bankService.GetBankById(id);
-                Assert.AreEqual(_bankEdit.Name, bank.Name);
-            }
+            _mockBanks.Verify(b => b.Add(It.IsAny<Bank>()), Times.Once());
+            _mockContext.Verify(b => b.SaveChanges(), Times.Once());
         }
 
         [TestMethod]
-        public void F_DeleteBank_ShouldRemoveEntity()
+        public void UpdateBank_ShouldSaveChanges()
         {
-            using (var context = new ApplicationDbContext())
-            {
-                int id1 = (context.Banks.FirstOrDefault(b => b.Name == _bankEdit.Name)).Id;
-                int id2 = (context.Banks.FirstOrDefault(b => b.Name == _bankCreate2.Name)).Id;
+            _bankService.UpdateBank(_bankEdit);
 
-                _bankService.DeleteBank(id1);
-                _bankService.DeleteBank(id2);
+            _mockContext.Verify(b => b.SaveChanges(), Times.Once());
+        }
 
-                bool query = context.Banks.Any(b => b.Id == id1);
-                Assert.IsFalse(query);
-            }
+        [TestMethod]
+        public void DeleteBank_ShouldRemoveEntity()
+        {
+            _bankService.DeleteBank(1);
+
+            _mockBanks.Verify(b => b.Remove(It.IsAny<Bank>()), Times.Once());
+            _mockContext.Verify(b => b.SaveChanges(), Times.Once());
         }
     }
 }

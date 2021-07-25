@@ -1,4 +1,5 @@
-﻿using BankingApp.Models.BankAccountModels;
+﻿using BankingApp.Data;
+using BankingApp.Models.BankAccountModels;
 using BankingApp.Services;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
@@ -69,7 +70,7 @@ namespace BankingApp.WebAPI.Controllers
         private BankAccountService CreateBankAccountService()
         {
             var ownerId = Guid.Parse(User.Identity.GetUserId());
-            return new BankAccountService(ownerId);
+            return new BankAccountService(ownerId, new ApplicationDbContext());
         }
     }
 }

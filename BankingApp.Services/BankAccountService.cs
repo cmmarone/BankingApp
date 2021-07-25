@@ -13,146 +13,126 @@ namespace BankingApp.Services
     public class BankAccountService
     {
         private readonly Guid _ownerId;
-        public BankAccountService(Guid ownerId) => _ownerId = ownerId;
+        private readonly ApplicationDbContext _context;
+
+        public BankAccountService(Guid ownerId, ApplicationDbContext context)
+        {
+            _ownerId = ownerId;
+            _context = context;
+        }
 
         public IEnumerable<BankAccountListItem> GetUserBankAccounts()
         {
-            using (var context = new ApplicationDbContext())
+            var accountList = _context.BankAccounts.Where(a => a.OwnerId == _ownerId).ToList();
+            var listItemList = new List<BankAccountListItem>();
+            foreach (var account in accountList)
             {
-                var accountList = context.BankAccounts.Where(a => a.OwnerId == _ownerId).ToList();
-                var listItemList = new List<BankAccountListItem>();
-                foreach (var account in accountList)
+                var listItem = new BankAccountListItem
                 {
-                    var listItem = new BankAccountListItem
-                    {
-                        AccountNumber = account.Id.ToString("D9"),
-                        AccountType = account.AccountType.ToString()
-                    };
-                    listItemList.Add(listItem);
-                }
-                return listItemList.OrderBy(a => a.AccountNumber);
+                    AccountNumber = account.Id.ToString("D9"),
+                    AccountType = account.AccountType.ToString()
+                };
+                listItemList.Add(listItem);
             }
+            return listItemList.OrderBy(a => a.AccountNumber);
         }
 
         public BankAccountDetail GetBankAccountById(int id)
         {
-            using (var context = new ApplicationDbContext())
+            var entity = _context.BankAccounts.FirstOrDefault(a => a.Id == id && a.OwnerId == _ownerId);
+            return new BankAccountDetail
             {
-                var entity = context.BankAccounts.FirstOrDefault(a => a.Id == id && a.OwnerId == _ownerId);
-                return new BankAccountDetail
-                {
-                    BankName = entity.Bank.Name,
-                    AccountNumber = entity.Id.ToString("D9"),
-                    AccountType = entity.AccountType.ToString(),
-                    Balance = entity.Balance
-                };
-            }
+                BankName = entity.Bank.Name,
+                AccountNumber = entity.Id.ToString("D9"),
+                AccountType = entity.AccountType.ToString(),
+                Balance = entity.Balance
+            };
+
         }
 
         public BankAccountDetailAdmin GetBankAccountByIdAdmin(int id)
         {
-            using (var context = new ApplicationDbContext())
+            var entity = _context.BankAccounts.FirstOrDefault(a => a.Id == id);
+            return new BankAccountDetailAdmin
             {
-                var entity = context.BankAccounts.FirstOrDefault(a => a.Id == id);
-                return new BankAccountDetailAdmin
-                {
-                    BankName = entity.Bank.Name,
-                    FullName = $"{entity.LastName}, {entity.FirstName}",
-                    AccountNumber = entity.Id.ToString("D9"),
-                    AccountType = entity.AccountType.ToString(),
-                    Balance = entity.Balance
-                };
-            }
+                BankName = entity.Bank.Name,
+                FullName = $"{entity.LastName}, {entity.FirstName}",
+                AccountNumber = entity.Id.ToString("D9"),
+                AccountType = entity.AccountType.ToString(),
+                Balance = entity.Balance
+            };
         }
 
         public bool CreateBankAccount(BankAccountCreate model)
         {
-            using (var context = new ApplicationDbContext())
+            var account = new BankAccount
             {
-                var account = new BankAccount
-                {
-                    BankId = (context.Banks.FirstOrDefault(b => b.Name.ToLower() == model.BankName.ToLower())).Id,
-                    AccountType = model.AccountType,
-                    Balance = 0,
-                    OwnerId = _ownerId,
-                    LastName = model.LastName,
-                    FirstName = model.FirstName
-                };
-                context.BankAccounts.Add(account);
-                return context.SaveChanges() == 1;
-            }
+                BankId = (_context.Banks.FirstOrDefault(b => b.Name.ToLower() == model.BankName.ToLower())).Id,
+                AccountType = model.AccountType,
+                Balance = 0,
+                OwnerId = _ownerId,
+                LastName = model.LastName,
+                FirstName = model.FirstName
+            };
+            _context.BankAccounts.Add(account);
+            return _context.SaveChanges() == 1;
         }
 
         public bool UpdateBankAccount(BankAccountEdit model)
         {
-            using (var context = new ApplicationDbContext())
-            {
-                var entity = context.BankAccounts.FirstOrDefault(a => a.Id == model.BankAccountId);
+            var entity = _context.BankAccounts.FirstOrDefault(a => a.Id == model.BankAccountId);
 
-                if (model.BankName != null)
-                    entity.BankId = (context.Banks.FirstOrDefault(b => b.Name.ToLower() == model.BankName.ToLower())).Id;
-                if (model.AccountType != null)
-                    entity.AccountType = model.AccountType ?? AccountType.Checking;
-                if (model.Balance != null)
-                    entity.Balance = model.Balance ?? 0;
-                if (model.LastName != null)
-                    entity.LastName = model.LastName;
-                if (model.FirstName != null)
-                    entity.FirstName = model.FirstName;
-                return context.SaveChanges() == 1;
-            }
+            if (model.BankName != null)
+                entity.BankId = (_context.Banks.FirstOrDefault(b => b.Name.ToLower() == model.BankName.ToLower())).Id;
+            if (model.AccountType != null)
+                entity.AccountType = model.AccountType ?? AccountType.Checking;
+            if (model.Balance != null)
+                entity.Balance = model.Balance ?? 0;
+            if (model.LastName != null)
+                entity.LastName = model.LastName;
+            if (model.FirstName != null)
+                entity.FirstName = model.FirstName;
+            return _context.SaveChanges() == 1;
         }
 
         public bool DeleteBankAccount(int id)
         {
-            using (var context = new ApplicationDbContext())
-            {
-                var entity = context.BankAccounts.FirstOrDefault(a => a.Id == id);
-                context.BankAccounts.Remove(entity);
-                return context.SaveChanges() == 1;
-            }
+            var entity = _context.BankAccounts.FirstOrDefault(a => a.Id == id);
+            _context.BankAccounts.Remove(entity);
+            return _context.SaveChanges() == 1;
+
         }
 
         public bool MakeDeposit(Deposit model)
         {
-            using (var context = new ApplicationDbContext())
-            {
-                var account = context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
-
-                account.Balance += model.Amount;
-                return context.SaveChanges() == 1;
-            }
+            var account = _context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
+            account.Balance += model.Amount;
+            return _context.SaveChanges() == 1;
         }
 
         public int MakeWithdrawal(Withdrawal model)
         {
-            using (var context = new ApplicationDbContext())
-            {
-                var account = context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
-                if (account.AccountType == AccountType.IndividualInvestment)
-                    if (model.Amount > 1000) return 3;
-                if (account.Balance < model.Amount) return 4;
+            var account = _context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
+            if (account.AccountType == AccountType.IndividualInvestment)
+                if (model.Amount > 1000) return 3;
+            if (account.Balance < model.Amount) return 4;
 
-                account.Balance -= model.Amount;
-                if (context.SaveChanges() == 1) return 1;
-                else return 2;
-            }
+            account.Balance -= model.Amount;
+            if (_context.SaveChanges() == 1) return 1;
+            else return 2;
         }
 
         public int MakeTransfer(Transfer model)
         {
-            using (var context = new ApplicationDbContext())
-            {
-                var sendingAccount = context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
-                var receivingAccount = context.BankAccounts.FirstOrDefault(a => a.Id == model.TargetAccount);
+            var sendingAccount = _context.BankAccounts.FirstOrDefault(a => a.Id == model.AccountNumber && a.OwnerId == _ownerId);
+            var receivingAccount = _context.BankAccounts.FirstOrDefault(a => a.Id == model.TargetAccount);
 
-                if (sendingAccount.Balance < model.Amount) return 3;
+            if (sendingAccount.Balance < model.Amount) return 3;
 
-                sendingAccount.Balance -= model.Amount;
-                receivingAccount.Balance += model.Amount;
-                if (context.SaveChanges() == 2) return 1;
-                else return 2;
-            }
+            sendingAccount.Balance -= model.Amount;
+            receivingAccount.Balance += model.Amount;
+            if (_context.SaveChanges() == 2) return 1;
+            else return 2;
         }
     }
 }
