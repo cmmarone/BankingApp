@@ -18,26 +18,26 @@ namespace BankingApp.UnitTests
         private Mock<ApplicationDbContext> _mockContext;
         private BankService _bankService;
 
-        private BankCreate _bankCreate1;
+        private BankCreate _bankCreate;
         private BankEdit _bankEdit;
 
         [TestInitialize]
         public void Arrange()
         {
-            var testEntities = new List<Bank>
+            var mockEntities = new List<Bank>
             {
                 new Bank { Id = 1, Name = "Bank One" },
                 new Bank { Id = 2, Name = "Bank Two" },
                 new Bank { Id = 3, Name = "Bank Three" }
             }.AsQueryable();
-            _bankCreate1 = new BankCreate { Name = "New Bank" };
+            _bankCreate = new BankCreate { Name = "New Bank" };
             _bankEdit = new BankEdit { BankId = 1, Name = "Changed Name" };
 
             _mockBanks = new Mock<DbSet<Bank>>();
-            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.Provider).Returns(testEntities.Provider);
-            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.Expression).Returns(testEntities.Expression);
-            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.ElementType).Returns(testEntities.ElementType);
-            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.GetEnumerator()).Returns(testEntities.GetEnumerator());
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.Provider).Returns(mockEntities.Provider);
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.Expression).Returns(mockEntities.Expression);
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.ElementType).Returns(mockEntities.ElementType);
+            _mockBanks.As<IQueryable<Bank>>().Setup(m => m.GetEnumerator()).Returns(mockEntities.GetEnumerator());
             _mockContext = new Mock<ApplicationDbContext>();
             _mockContext.Setup(m => m.Banks).Returns(_mockBanks.Object);
             _bankService = new BankService(_mockContext.Object);
@@ -62,7 +62,7 @@ namespace BankingApp.UnitTests
         [TestMethod]
         public void CreateBank_ShouldAddEntity()
         {
-            _bankService.CreateBank(_bankCreate1);
+            _bankService.CreateBank(_bankCreate);
 
             _mockBanks.Verify(b => b.Add(It.IsAny<Bank>()), Times.Once());
             _mockContext.Verify(b => b.SaveChanges(), Times.Once());

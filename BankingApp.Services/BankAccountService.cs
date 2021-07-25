@@ -39,7 +39,7 @@ namespace BankingApp.Services
 
         public BankAccountDetail GetBankAccountById(int id)
         {
-            var entity = _context.BankAccounts.FirstOrDefault(a => a.Id == id && a.OwnerId == _ownerId);
+            var entity = _context.BankAccounts.SingleOrDefault(a => a.Id == id && a.OwnerId == _ownerId);
             return new BankAccountDetail
             {
                 BankName = entity.Bank.Name,
@@ -47,7 +47,6 @@ namespace BankingApp.Services
                 AccountType = entity.AccountType.ToString(),
                 Balance = entity.Balance
             };
-
         }
 
         public BankAccountDetailAdmin GetBankAccountByIdAdmin(int id)
@@ -100,7 +99,6 @@ namespace BankingApp.Services
             var entity = _context.BankAccounts.FirstOrDefault(a => a.Id == id);
             _context.BankAccounts.Remove(entity);
             return _context.SaveChanges() == 1;
-
         }
 
         public bool MakeDeposit(Deposit model)
